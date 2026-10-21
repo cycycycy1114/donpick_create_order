@@ -1,0 +1,38 @@
+const { Client } = require('@notionhq/client');
+
+const notion = new Client({ auth: process.env.NOTION_TOKEN });
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  const { nickname, item, quantity } = req.body;
+
+  try {
+    // 寫入 Notion 資料庫
+    await notion.pages.create({
+      parent: { database_id: process.env.DATABASE_ID },
+      properties: {
+        // 請確保這裡的 key 名稱與您 Notion 資料庫的欄位名稱一模一樣
+        'LINE 暱稱': {
+          title: [{ text: { content: nickname } }]
+        },
+        '品項': {
+          rich_text: [{ text: { content: item } }]
+        },
+        '數量': {
+          number: Number(quantity)
+        },
+        '狀態': {
+          select: { name: '待處理' }
+        }
+      }
+    });
+
+    return res.status(200).json({ success: true, message: '訂單建立成功' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
