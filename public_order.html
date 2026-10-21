@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>快速下單外掛</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f7f6f3; color: #37352f; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+    h2 { margin-top: 0; font-size: 1.2rem; }
+    label { display: block; margin: 10px 0 5px; font-size: 0.9rem; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    button { width: 100%; margin-top: 15px; padding: 10px; background: #2eaadc; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    button:hover { background: #0891b2; }
+    #msg { margin-top: 10px; font-size: 0.9rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🛍️ 預購商品快速下單</h2>
+    <form id="orderForm">
+      <label>LINE / 買家暱稱</label>
+      <input type="text" id="nickname" required placeholder="例如：cy">
+
+      <label>預購商品品項</label>
+      <input type="text" id="item" required placeholder="例如：限定款公仔">
+
+      <label>數量</label>
+      <input type="number" id="quantity" value="1" min="1" required>
+
+      <button type="submit" id="btn">送出訂單</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+
+  <script>
+    document.getElementById('orderForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn');
+      const msg = document.getElementById('msg');
+      btn.disabled = true;
+      btn.innerText = '處理中...';
+
+      const data = {
+        nickname: document.getElementById('nickname').value,
+        item: document.getElementById('item').value,
+        quantity: document.getElementById('quantity').value
+      };
+
+      try {
+        const res = await fetch('/api/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          msg.style.color = 'green';
+          msg.innerText = '✅ 下單成功！訂單已同步至 Notion';
+          document.getElementById('orderForm').reset();
+        } else {
+          throw new Error(result.message || '下單失敗');
+        }
+      } catch (err) {
+        msg.style.color = 'red';
+        msg.innerText = '❌ ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '送出訂單';
+      }
+    });
+  </script>
+</body>
+</html>
